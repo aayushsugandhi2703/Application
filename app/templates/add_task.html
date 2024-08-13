@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Task</title>
+</head>
+<body>
+    <h2>Add New Task</h2>
+    <form method="POST" action="{{ url_for('tasks.add') }}">
+        {{ form.hidden_tag() }}
+        <div>
+            {{ form.title.label }}<br>
+            {{ form.title(size=32) }}<br>
+            {{ form.title.errors[0] if form.title.errors else '' }}
+        </div>
+        <div>
+            {{ form.description.label }}<br>
+            {{ form.description(size=32) }}<br>
+            {{ form.description.errors[0] if form.description.errors else '' }}
+        </div>
+    </form> 
+</body> 
+</html>

@@ -1,0 +1,22 @@
+application/
+├── app/
+│   ├── __init__.py
+│   ├── forms.py
+│   ├── auth/
+│   │   ├── __init__.py
+│   │   ├── models.py
+│   │   └── routes.py
+│   ├── task/
+│   │   ├── __init__.py
+│   │   ├── models.py
+│   │   └── routes.py
+│   └── templates/
+│       ├── index.html
+│       ├── base.html
+│       ├── login.html
+│       ├── signup.html
+│       ├── task.html
+│       └── display_task.html
+├── config.py
+├── run.py
+└── secret.py
