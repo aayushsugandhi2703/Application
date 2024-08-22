@@ -1,7 +1,7 @@
 from flask import Flask, Blueprint, render_template, redirect, url_for, flash, jsonify, make_response
-from flask_jwt_extended import JWTManager, create_access_token, create_refresh_token, jwt_required
-from app.models import User, Session
-from app.forms import LoginForm, RegisterForm
+from flask_jwt_extended import JWTManager, create_access_token, create_refresh_token, jwt_required, get_jwt_identity    
+from app.models import User, Session, Task
+from app.forms import LoginForm, RegisterForm, TaskForm
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -24,9 +24,10 @@ def Login():
             access_token = create_access_token(identity=user.id)
             refresh_token = create_refresh_token(identity=user.id)
 
-            response = make_response(redirect(url_for('task.add')))
-            response.set_cookie('access_token', access_token)
-            return response  
+            response = make_response(redirect(url_for('auth.add')))
+            response.set_cookie('access_token_cookie', access_token, httponly=True)
+            response.set_cookie('refresh_token_cookie', refresh_token, httponly=True)
+            return response 
             # return jsonify(access_token=access_token, refresh_token=refresh_token)
         else:
             flash('Invalid username or password')
@@ -56,3 +57,19 @@ def Logout():
     response = jsonify(msg='Logged out successfully')
     response.delete_cookie('access_token')
     return response, 200
+
+@auth_bp.route('/add', methods=['GET', 'POST'])
+@jwt_required()
+def add():
+    user_id = get_jwt_identity()
+    form = TaskForm()
+    if form.validate_on_submit():
+            try:
+                task = Task(title=form.title.data, user_id=user_id)
+                Session.add(task)
+                Session.commit()
+                flash('Task added successfully')
+                return redirect(url_for('index'))
+            except Exception as e:
+                flash(f'Task addition failed: {str(e)}')
+    return render_template('task.html', form=form)
