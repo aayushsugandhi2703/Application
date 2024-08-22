@@ -10,7 +10,6 @@ def create_app():
     # Initialize JWT with the app
     from flask_jwt_extended import JWTManager
     jwt = JWTManager(app)
-    jwt.init_app(app)
 
     # Import and register blueprints
     from app.auth.routes import auth_bp

@@ -1,5 +1,5 @@
-from flask import Flask, Blueprint, render_template, redirect, url_for, flash, jsonify
-from flask_jwt_extended import JWTManager, create_access_token, create_refresh_token, jwt_required, get_jwt_identity
+from flask import Flask, Blueprint, render_template, redirect, url_for, flash, jsonify, make_response
+from flask_jwt_extended import JWTManager, create_access_token, create_refresh_token, jwt_required
 from app.models import User, Session
 from app.forms import LoginForm, RegisterForm
 
@@ -23,7 +23,10 @@ def Login():
             # Create the access and refresh tokens
             access_token = create_access_token(identity=user.id)
             refresh_token = create_refresh_token(identity=user.id)
-            return redirect(url_for('task.add', token=access_token))  
+
+            response = make_response(redirect(url_for('task.add')))
+            response.set_cookie('access_token', access_token)
+            return response  
             # return jsonify(access_token=access_token, refresh_token=refresh_token)
         else:
             flash('Invalid username or password')
@@ -50,4 +53,6 @@ def Register():
 @auth_bp.route('/logout', methods=['GET'])  
 @jwt_required()
 def Logout():
-    return redirect(url_for('auth.Login'))
+    response = jsonify(msg='Logged out successfully')
+    response.delete_cookie('access_token')
+    return response, 200
