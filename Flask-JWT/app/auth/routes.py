@@ -70,7 +70,21 @@ def add():
                 Session.add(task)
                 Session.commit()
                 flash('Task added successfully')
-                return redirect(url_for('index'))
+                return redirect(url_for('auth.get_tasks'))
             except Exception as e:
                 flash(f'Task addition failed: {str(e)}')
+                Session.rollback()
     return render_template('task.html', form=form)
+
+@auth_bp.route('/display', methods=['GET'])
+@jwt_required()
+def get_tasks():
+    user_id = get_jwt_identity()
+    
+    # Rollback if there's any uncommitted session state (though it's not usually necessary here)
+    Session.rollback()
+    
+    tasks = Session.query(Task).filter_by(user_id=user_id).all()
+    tasks_json = [{'id': task.id, 'title': task.title} for task in tasks]
+    
+    return jsonify(tasks_json)

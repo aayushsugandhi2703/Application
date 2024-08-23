@@ -21,15 +21,5 @@
         </div>
     </form>
 
-    <h1>Tasks</h1>
-    {% if tasks %}
-        <ul>
-            {% for task in tasks %}
-                <li>{{ task.title }}</li>
-            {% endfor %}
-        </ul>
-    {% else %}
-        <p>No tasks available.</p>
-    {% endif %}
 </body>
 </html>
