@@ -1,4 +1,4 @@
-from flask import Flask, Blueprint, render_template, redirect, url_for, flash, jsonify, make_response
+from flask import Flask, Blueprint, render_template, redirect, url_for, flash, jsonify, make_response, session
 from flask_jwt_extended import JWTManager, create_access_token, create_refresh_token, jwt_required, get_jwt_identity    
 from app.models import User, Session, Task
 from app.forms import LoginForm, RegisterForm, TaskForm
@@ -28,9 +28,8 @@ def Login():
             response.set_cookie('access_token_cookie', access_token, httponly=True)
             response.set_cookie('refresh_token_cookie', refresh_token, httponly=True)
             return response 
-            # return jsonify(access_token=access_token, refresh_token=refresh_token)
-        else:
             flash('Invalid username or password')
+      # return jsonify(access_token=access_token, refresh_token=refresh_token)
     return render_template('login.html', form=form)
 
 # This function and route is for the user to register
@@ -51,13 +50,14 @@ def Register():
     return render_template('signup.html', form=form)
 
 # This function and route is for the user to logout
-@auth_bp.route('/add/logout', methods=['GET'])  
+@auth_bp.route('/logout', methods=['GET'])  
 @jwt_required()
 def Logout():
-    response = jsonify(msg='Logged out successfully')
+
+    response = make_response(redirect(url_for('auth.Login')))
     response.delete_cookie('access_token_cookie')  # Ensure you delete the correct cookie
     response.delete_cookie('refresh_token_cookie')  # Also delete the refresh token
-    return redirect(url_for('auth.Login'))
+    return response
 
 @auth_bp.route('/add', methods=['GET', 'POST'])
 @jwt_required()
