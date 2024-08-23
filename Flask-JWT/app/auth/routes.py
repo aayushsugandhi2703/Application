@@ -51,12 +51,13 @@ def Register():
     return render_template('signup.html', form=form)
 
 # This function and route is for the user to logout
-@auth_bp.route('/logout', methods=['GET'])  
+@auth_bp.route('/add/logout', methods=['GET'])  
 @jwt_required()
 def Logout():
     response = jsonify(msg='Logged out successfully')
-    response.delete_cookie('access_token')
-    return response, 200
+    response.delete_cookie('access_token_cookie')  # Ensure you delete the correct cookie
+    response.delete_cookie('refresh_token_cookie')  # Also delete the refresh token
+    return redirect(url_for('auth.Login'))
 
 @auth_bp.route('/add', methods=['GET', 'POST'])
 @jwt_required()
