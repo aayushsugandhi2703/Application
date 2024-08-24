@@ -19,6 +19,7 @@ def Login():
     if form.validate_on_submit(): 
         user = Session.query(User).filter_by(username=form.username.data).first()
         if user and user.password == form.password.data:
+            session['user_id'] = user.id
 
             # Create the access and refresh tokens
             access_token = create_access_token(identity=user.id)
@@ -57,16 +58,18 @@ def Logout():
     response = make_response(redirect(url_for('auth.Login')))
     response.delete_cookie('access_token_cookie')  # Ensure you delete the correct cookie
     response.delete_cookie('refresh_token_cookie')  # Also delete the refresh token
+    session.clear()
     return response
 
 @auth_bp.route('/add', methods=['GET', 'POST'])
-@jwt_required()
 def add():
-    user_id = get_jwt_identity()
+    if 'user_id' not in session:
+        return redirect(url_for('auth.Login'))
+    
     form = TaskForm()
     if form.validate_on_submit():
             try:
-                task = Task(title=form.title.data, user_id=user_id)
+                task = Task(title=form.title.data,user_id=session['user_id'])
                 Session.add(task)
                 Session.commit()
                 flash('Task added successfully')
@@ -88,3 +91,13 @@ def get_tasks():
     tasks_json = [{'id': task.id, 'title': task.title} for task in tasks]
     
     return jsonify(tasks_json)
+
+@auth_bp.route('/delete/<int:id>', methods=['GET'])
+def delete(id):
+    if 'user_id' in session:
+        user_id = session['user_id']
+    task = Session.query(Task).filter_by(user_id=user_id).filter_by(id=id).first()
+    Session.delete(task)
+    Session.commit()
+    flash('Task deleted successfully')
+    return redirect(url_for('auth.get_tasks'))
