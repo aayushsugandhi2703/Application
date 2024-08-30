@@ -3,6 +3,7 @@ from flask_jwt_extended import JWTManager, create_access_token, create_refresh_t
 from app.models import User, Session, Task
 from app.forms import LoginForm, RegisterForm, TaskForm
 from app.task.routes import task_bp
+from werkzeug.security import generate_password_hash, check_password_hash
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -19,7 +20,7 @@ def Login():
     # If the form is submitted and validated, the user will be redirected to the task page
     if form.validate_on_submit(): 
         user = Session.query(User).filter_by(username=form.username.data).first()
-        if user and user.password == form.password.data:
+        if user and user.password == check_password_hash(user.password, form.password.data):
             session['user_id'] = user.id
 
             # Create the access and refresh tokens
@@ -39,8 +40,9 @@ def Register():
     form = RegisterForm()
 
     # If the form is submitted and validated, the user will be redirected to the login page
-    if form.validate_on_submit():  
-        user = User(username=form.username.data, password=form.password.data)
+    if form.validate_on_submit():
+        passcode = generate_password_hash(form.password.data)  
+        user = User(username=form.username.data, password=passcode)
         Session.add(user)
         Session.commit()
         flash('User created successfully')

@@ -5,6 +5,7 @@ from app.forms import TaskForm
 
 task_bp = Blueprint('task', __name__)
 
+
 @task_bp.route('/add', methods=['GET', 'POST'])
 def add():
     if 'user_id' not in session:
