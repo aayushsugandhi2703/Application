@@ -2,6 +2,8 @@ from flask import Flask, Blueprint, render_template, redirect, url_for, flash, j
 from flask_jwt_extended import JWTManager, create_access_token, create_refresh_token, jwt_required, get_jwt_identity    
 from app.models import User, Session, Task
 from app.forms import LoginForm, RegisterForm, TaskForm
+from app.task.routes import task_bp
+from werkzeug.security import generate_password_hash, check_password_hash
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -18,18 +20,17 @@ def Login():
     # If the form is submitted and validated, the user will be redirected to the task page
     if form.validate_on_submit(): 
         user = Session.query(User).filter_by(username=form.username.data).first()
-        if user and user.password == form.password.data:
+        if user and user.password == check_password_hash(user.password, form.password.data):
             session['user_id'] = user.id
 
             # Create the access and refresh tokens
             access_token = create_access_token(identity=user.id)
             refresh_token = create_refresh_token(identity=user.id)
 
-            response = make_response(redirect(url_for('auth.add')))
+            response = make_response(redirect(url_for('task.add')))
             response.set_cookie('access_token_cookie', access_token, httponly=True)
             response.set_cookie('refresh_token_cookie', refresh_token, httponly=True)
             return response 
-            flash('Invalid username or password')
       # return jsonify(access_token=access_token, refresh_token=refresh_token)
     return render_template('login.html', form=form)
 
@@ -39,8 +40,9 @@ def Register():
     form = RegisterForm()
 
     # If the form is submitted and validated, the user will be redirected to the login page
-    if form.validate_on_submit():  
-        user = User(username=form.username.data, password=form.password.data)
+    if form.validate_on_submit():
+        passcode = generate_password_hash(form.password.data)  
+        user = User(username=form.username.data, password=passcode)
         Session.add(user)
         Session.commit()
         flash('User created successfully')
@@ -60,44 +62,3 @@ def Logout():
     response.delete_cookie('refresh_token_cookie')  # Also delete the refresh token
     session.clear()
     return response
-
-@auth_bp.route('/add', methods=['GET', 'POST'])
-def add():
-    if 'user_id' not in session:
-        return redirect(url_for('auth.Login'))
-    
-    form = TaskForm()
-    if form.validate_on_submit():
-            try:
-                task = Task(title=form.title.data,user_id=session['user_id'])
-                Session.add(task)
-                Session.commit()
-                flash('Task added successfully')
-                return redirect(url_for('auth.get_tasks'))
-            except Exception as e:
-                flash(f'Task addition failed: {str(e)}')
-                Session.rollback()
-    return render_template('task.html', form=form)
-
-@auth_bp.route('/display', methods=['GET'])
-@jwt_required()
-def get_tasks():
-    user_id = get_jwt_identity()
-    
-    # Rollback if there's any uncommitted session state (though it's not usually necessary here)
-    Session.rollback()
-    
-    tasks = Session.query(Task).filter_by(user_id=user_id).all()
-    tasks_json = [{'id': task.id, 'title': task.title} for task in tasks]
-    
-    return jsonify(tasks_json)
-
-@auth_bp.route('/delete/<int:id>', methods=['GET'])
-def delete(id):
-    if 'user_id' in session:
-        user_id = session['user_id']
-    task = Session.query(Task).filter_by(user_id=user_id).filter_by(id=id).first()
-    Session.delete(task)
-    Session.commit()
-    flash('Task deleted successfully')
-    return redirect(url_for('auth.get_tasks'))

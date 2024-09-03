@@ -14,7 +14,9 @@ def create_app():
 
     # Import and register blueprints
     from app.auth.routes import auth_bp
+    from app.task.routes import task_bp
 
     app.register_blueprint(auth_bp, url_prefix='/')
+    app.register_blueprint(task_bp, url_prefix='/task')
 
     return app
