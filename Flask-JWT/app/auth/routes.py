@@ -20,7 +20,7 @@ def Login():
     # If the form is submitted and validated, the user will be redirected to the task page
     if form.validate_on_submit(): 
         user = Session.query(User).filter_by(username=form.username.data).first()
-        if user and user.password == check_password_hash(user.password, form.password.data):
+        if user and check_password_hash(user.password, form.password.data):
             session['user_id'] = user.id
 
             # Create the access and refresh tokens
